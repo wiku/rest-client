@@ -1,16 +1,17 @@
-package com.wiku.rest_client;
-
-import java.io.IOException;
+/*
+ * Copyright (c) 2017 Wiku. All rights reserved.
+ */
+package com.wiku.rest.client;
 
 public class RestClientException extends Exception
 {
 
-    public RestClientException(String message)
+    public RestClientException( String message )
     {
         super(message);
     }
 
-    public RestClientException(String message, Throwable e)
+    public RestClientException( String message, Throwable e )
     {
         super(message, e);
     }

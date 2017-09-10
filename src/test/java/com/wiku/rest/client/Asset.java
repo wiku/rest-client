@@ -1,13 +1,13 @@
-package com.wiku.rest_client;
-
-import javax.xml.bind.annotation.XmlRootElement;
+/*
+ * Copyright (c) 2017 Wiku. All rights reserved.
+ */
+package com.wiku.rest.client;
 
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
 @Data
-@XmlRootElement
 @AllArgsConstructor
 @NoArgsConstructor
 public class Asset
