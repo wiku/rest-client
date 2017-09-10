@@ -3,15 +3,18 @@
  */
 package com.wiku.rest.client;
 
+import java.lang.reflect.Array;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.type.CollectionType;
 
 import lombok.RequiredArgsConstructor;
 
 @RequiredArgsConstructor
-class CrudResource<T>
+public class CrudResource<T>
 {
 
     private static ObjectMapper jsonMapper = new ObjectMapper();
@@ -28,10 +31,9 @@ class CrudResource<T>
     @SuppressWarnings("unchecked")
     public Collection<T> read() throws RestClientException
     {
-        Class<?> responseClass = jsonMapper.getTypeFactory()
-                .constructCollectionType(List.class, resourceClass)
-                .getRawClass();
-        return (Collection<T>)restClient.get(uri, responseClass);
+        Class<?> arrayClass = Array.newInstance(resourceClass, 0).getClass();
+        T[] array = (T[])restClient.get(uri, arrayClass);
+        return Arrays.asList(array);
     }
 
     public T read( int id ) throws RestClientException

@@ -14,6 +14,7 @@ import org.apache.http.impl.conn.PoolingHttpClientConnectionManager;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.type.CollectionType;
 
 import lombok.RequiredArgsConstructor;
 
@@ -39,6 +40,7 @@ public class RestClient
         HttpUriRequest getRequest = requestFactory.newHttpGet(uri);
         return sendRequestAndGetResponse(getRequest, responseClass);
     }
+    
 
     public <REQ, RESP> RESP post( String uri, REQ reqest, Class<RESP> responseClass ) throws RestClientException
     {

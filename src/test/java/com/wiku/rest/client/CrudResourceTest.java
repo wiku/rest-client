@@ -5,6 +5,7 @@ package com.wiku.rest.client;
 
 import static org.mockito.Mockito.when;
 
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
@@ -25,7 +26,7 @@ public class CrudResourceTest
     private static final String URI = "http://localhost/api/test";
     private static final TestClass REQUEST_OBJECT = new TestClass(1, "a");
     private static final TestClass RESPONSE_OBJECT = new TestClass(2, "b");
-    private static final Collection<TestClass> ALL_RESOURCES = Collections.singletonList(RESPONSE_OBJECT);
+    private static final TestClass[] ALL_RESOURCES = {RESPONSE_OBJECT};
     private static ObjectMapper jsonMapper = new ObjectMapper();
 
     @Mock
@@ -42,11 +43,11 @@ public class CrudResourceTest
     @Test
     public void canReadAllResources() throws RestClientException, InstantiationException, IllegalAccessException
     {
-        when(restClient.get(URI, getListClass())).thenReturn(ALL_RESOURCES);
+        when(restClient.get(URI, TestClass[].class)).thenReturn(ALL_RESOURCES);
 
         Collection<TestClass> allResources = crudResource.read();
-
-        Assert.assertEquals(ALL_RESOURCES, allResources);
+        System.out.println(allResources);
+        Assert.assertEquals(Arrays.asList(ALL_RESOURCES), allResources);
     }
 
     @Test
