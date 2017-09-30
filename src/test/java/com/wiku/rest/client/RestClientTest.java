@@ -22,10 +22,12 @@ import org.apache.http.client.methods.HttpPost;
 import org.apache.http.client.methods.HttpPut;
 import org.apache.http.client.methods.HttpUriRequest;
 import org.apache.http.impl.client.CloseableHttpClient;
+import org.junit.Rule;
 import org.junit.Test;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.github.tomakehurst.wiremock.junit.WireMockRule;
 
 public class RestClientTest
 {
@@ -34,6 +36,8 @@ public class RestClientTest
     private static String uri = "http://localhost:8080/api/v1/assets/1";
     private static TestClass requestObject = new TestClass(1, "aaa");
     private static TestClass responseObject = new TestClass(1, "bbb");
+    
+
 
     @Test
     public void canGetCrudResourceFromRestClient()

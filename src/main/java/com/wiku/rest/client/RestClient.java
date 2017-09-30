@@ -6,15 +6,18 @@ package com.wiku.rest.client;
 import java.io.IOException;
 
 import org.apache.http.HttpEntity;
+import org.apache.http.auth.AuthScope;
+import org.apache.http.auth.UsernamePasswordCredentials;
+import org.apache.http.client.CredentialsProvider;
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpUriRequest;
+import org.apache.http.impl.client.BasicCredentialsProvider;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClients;
 import org.apache.http.impl.conn.PoolingHttpClientConnectionManager;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.type.CollectionType;
 
 import lombok.RequiredArgsConstructor;
 
@@ -28,11 +31,29 @@ public class RestClient
 
     public RestClient()
     {
-        PoolingHttpClientConnectionManager cm = new PoolingHttpClientConnectionManager();
-        cm.setMaxTotal(8);
-
+        PoolingHttpClientConnectionManager cm = createPoolingConnectionManager();
         requestFactory = new HttpRequestFactory();
         client = HttpClients.custom().setConnectionManager(cm).build();
+    }
+
+    public RestClient( String username, String password )
+    {
+        PoolingHttpClientConnectionManager cm = createPoolingConnectionManager();
+
+        CredentialsProvider credentialsProvider = new BasicCredentialsProvider();
+        credentialsProvider.setCredentials(AuthScope.ANY, new UsernamePasswordCredentials(username, password));
+        requestFactory = new HttpRequestFactory();
+        client = HttpClients.custom()
+                .setDefaultCredentialsProvider(credentialsProvider)
+                .setConnectionManager(cm)
+                .build();
+    }
+
+    private PoolingHttpClientConnectionManager createPoolingConnectionManager()
+    {
+        PoolingHttpClientConnectionManager cm = new PoolingHttpClientConnectionManager();
+        cm.setMaxTotal(8);
+        return cm;
     }
 
     public <RESP> RESP get( String uri, Class<RESP> responseClass ) throws RestClientException
@@ -40,11 +61,11 @@ public class RestClient
         HttpUriRequest getRequest = requestFactory.newHttpGet(uri);
         return sendRequestAndGetResponse(getRequest, responseClass);
     }
-    
 
     public <REQ, RESP> RESP post( String uri, REQ reqest, Class<RESP> responseClass ) throws RestClientException
     {
-        HttpUriRequest postRequest = requestFactory.newHttpPost(uri, getJsonFromRequestObject(reqest));
+        String jsonFromRequestObject = getJsonFromRequestObject(reqest);
+        HttpUriRequest postRequest = requestFactory.newHttpPost(uri, jsonFromRequestObject);
         return sendRequestAndGetResponse(postRequest, responseClass);
     }
 
@@ -120,7 +141,8 @@ public class RestClient
     {
         if( response.getStatusLine().getStatusCode() != 200 )
         {
-            throw new RestClientException("Failed : HTTP error code : " + response.getStatusLine().getStatusCode());
+            throw new RestClientException("Failed : HTTP error code : " + response.getStatusLine().getStatusCode()
+                    + ": " + response.getStatusLine().getReasonPhrase());
         }
     }
 
