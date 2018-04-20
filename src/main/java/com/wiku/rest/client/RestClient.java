@@ -4,25 +4,37 @@
 package com.wiku.rest.client;
 
 import java.io.IOException;
+import java.util.concurrent.TimeUnit;
 
+import org.apache.http.HeaderElement;
+import org.apache.http.HeaderElementIterator;
 import org.apache.http.HttpEntity;
+import org.apache.http.HttpResponse;
 import org.apache.http.auth.AuthScope;
 import org.apache.http.auth.UsernamePasswordCredentials;
 import org.apache.http.client.CredentialsProvider;
+import org.apache.http.client.config.RequestConfig;
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpUriRequest;
+import org.apache.http.config.SocketConfig;
+import org.apache.http.conn.ConnectionKeepAliveStrategy;
+import org.apache.http.conn.HttpClientConnectionManager;
 import org.apache.http.impl.client.BasicCredentialsProvider;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClients;
+import org.apache.http.impl.conn.BasicHttpClientConnectionManager;
 import org.apache.http.impl.conn.PoolingHttpClientConnectionManager;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import lombok.RequiredArgsConstructor;
+import org.apache.http.message.BasicHeaderElementIterator;
+import org.apache.http.protocol.HTTP;
+import org.apache.http.protocol.HttpContext;
+import org.apache.http.util.EntityUtils;
 
-@RequiredArgsConstructor
-public class RestClient
+@RequiredArgsConstructor public class RestClient
 {
 
     private static ObjectMapper jsonMapper = new ObjectMapper();
@@ -31,14 +43,17 @@ public class RestClient
 
     public RestClient()
     {
-        PoolingHttpClientConnectionManager cm = createPoolingConnectionManager();
+        HttpClientConnectionManager cm = createPoolingConnectionManager();
         requestFactory = new HttpRequestFactory();
-        client = HttpClients.custom().setConnectionManager(cm).build();
+        client = HttpClients.custom()
+                .setKeepAliveStrategy(new DefaultKeepAliveStrategy(10))
+                .setConnectionManager(cm)
+                .build();
     }
 
     public RestClient( String username, String password )
     {
-        PoolingHttpClientConnectionManager cm = createPoolingConnectionManager();
+        HttpClientConnectionManager cm = createPoolingConnectionManager();
 
         CredentialsProvider credentialsProvider = new BasicCredentialsProvider();
         credentialsProvider.setCredentials(AuthScope.ANY, new UsernamePasswordCredentials(username, password));
@@ -49,10 +64,12 @@ public class RestClient
                 .build();
     }
 
-    private PoolingHttpClientConnectionManager createPoolingConnectionManager()
+    private HttpClientConnectionManager createPoolingConnectionManager()
     {
         PoolingHttpClientConnectionManager cm = new PoolingHttpClientConnectionManager();
-        cm.setMaxTotal(8);
+        cm.setMaxTotal(10);
+        cm.setDefaultMaxPerRoute(5);
+        cm.closeIdleConnections(1,TimeUnit.MINUTES);
         return cm;
     }
 
@@ -86,8 +103,8 @@ public class RestClient
         return new CrudResource<RESOURCE>(this, url, resourceClass);
     }
 
-    private <RESP> RESP sendRequestAndGetResponse( HttpUriRequest request, Class<RESP> responseClass )
-            throws RestClientException
+    private <RESP> RESP sendRequestAndGetResponse( HttpUriRequest request, Class<RESP> responseClass ) throws
+            RestClientException
     {
         CloseableHttpResponse response = sendRequest(request);
         checkStatusCode(response);
@@ -118,8 +135,8 @@ public class RestClient
         }
     }
 
-    private <RESP> RESP getEntityFromResponse( CloseableHttpResponse response, Class<RESP> resourceClass )
-            throws RestClientException
+    private <RESP> RESP getEntityFromResponse( CloseableHttpResponse response, Class<RESP> resourceClass ) throws
+            RestClientException
     {
         HttpEntity entity = response.getEntity();
         if( entity == null )
@@ -141,8 +158,17 @@ public class RestClient
     {
         if( response.getStatusLine().getStatusCode() != 200 )
         {
-            throw new RestClientException("Failed : HTTP error code : " + response.getStatusLine().getStatusCode()
-                    + ": " + response.getStatusLine().getReasonPhrase());
+            EntityUtils.consumeQuietly(response.getEntity());
+            if( response.getStatusLine().getStatusCode() == 404 )
+            {
+                throw new ResourceNotFoundRestClientException(response.getStatusLine().getReasonPhrase());
+            }
+            else
+            {
+                throw new RestClientException(
+                        "Failed : HTTP error code : " + response.getStatusLine().getStatusCode() + ": "
+                                + response.getStatusLine().getReasonPhrase());
+            }
         }
     }
 

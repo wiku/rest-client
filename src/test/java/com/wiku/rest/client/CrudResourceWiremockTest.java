@@ -133,6 +133,14 @@ public class CrudResourceWiremockTest
         verify(deleteRequestedFor(urlMatching(ASSETS_URL + "/1")));
     }
 
+    @Test(expected = ResourceNotFoundRestClientException.class)
+    public void whenGetNonExistingAsset_ShouldThrowNotFoundException() throws RestClientException
+    {
+        stubFor(get(urlEqualTo(ASSETS_URL + "/100")).willReturn(
+                aResponse().withStatus(404).withBody("resource not found").withHeader("Content-Type", "text/plain; charset=utf-8")));
+        Asset asset = assetResource.read(100);
+    }
+
     private String getAssetsResourceUrl()
     {
         return "http://localhost:" + mockedService.port() + ASSETS_URL;

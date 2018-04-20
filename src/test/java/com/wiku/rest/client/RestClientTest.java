@@ -163,6 +163,7 @@ public class RestClientTest
         client.put(uri, requestObject, TestClass.class);
     }
 
+
     private CloseableHttpClient mockHttpClient( HttpUriRequest request, CloseableHttpResponse response )
             throws IOException, ClientProtocolException
     {
